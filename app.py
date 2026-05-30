@@ -21,6 +21,22 @@ from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Ensure the installed MediaPipe exposes the expected `solutions` API.
+# On newer Python versions some mediapipe wheels may be incompatible; fail
+# early with a clear message so the developer can install a compatible
+# mediapipe release or use a supported Python interpreter (e.g. 3.10/3.11).
+try:
+    _mp_has_solutions = hasattr(mp, "solutions")
+except Exception:
+    _mp_has_solutions = False
+
+if not _mp_has_solutions:
+    raise RuntimeError(
+        "The installed 'mediapipe' package does not expose 'solutions'. "
+        "Install a compatible mediapipe (for example: mediapipe==0.8.10) "
+        "and use Python 3.10/3.11. See README.md for instructions."
+    )
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 otp_storage = {}
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
