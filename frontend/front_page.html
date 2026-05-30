@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Webcam</title>
+    <link rel="stylesheet" href="./static/style.css">
+    <script src="./static/app-config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+    <div class="page-center">
+        <div class="card" style="text-align:center;">
+            <div class="brand" style="justify-content:center;">
+                <div style="text-align:left;">
+                    <strong>Smart Webcam</strong>
+                    <span>Attendance, speech, and AI assistant</span>
+                </div>
+            </div>
+            <h1>Smart Webcam</h1>
+            <p>Continue to the login flow to receive your OTP and open the dashboard.</p>
+            <button id="enterBtn" class="button">Continue</button>
+        </div>
+    </div>
+
+    <script>
+        const APP_CONFIG = window.APP_CONFIG || {};
+        const API_BASE_URL = (APP_CONFIG.apiBaseUrl || '').replace(/\/$/, '');
+        const apiUrl = (path) => `${API_BASE_URL}${path}`;
+
+        document.getElementById('enterBtn').addEventListener('click', () => {
+            window.location.href = 'middle_page.html';
+        });
+
+        gsap.from('.card', { y: 40, opacity: 0, duration: 0.8, ease: 'power3.out' });
+    </script>
+</body>
+</html>

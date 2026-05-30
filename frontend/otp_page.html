@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP</title>
+    <link rel="stylesheet" href="./static/style.css">
+    <script src="./static/app-config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+    <div class="page-center">
+        <div class="card">
+            <div class="brand">
+                <div>
+                    <strong>Smart Webcam</strong>
+                    <span>Verify the OTP sent to your email</span>
+                </div>
+            </div>
+            <h2>Verify OTP</h2>
+            <form id="otpForm">
+                <input type="text" id="otp" name="otp" placeholder="123456" maxlength="6" required>
+                <button type="submit" id="verifyBtn" class="button">Verify OTP</button>
+                <button type="button" id="resendBtn" class="button secondary-button">Resend OTP</button>
+            </form>
+            <div id="message"></div>
+            <div class="link-row"><a href="middle_page.html">Back to login</a></div>
+        </div>
+    </div>
+
+    <script>
+        const APP_CONFIG = window.APP_CONFIG || {};
+        const API_BASE_URL = (APP_CONFIG.apiBaseUrl || '').replace(/\/$/, '');
+        const apiUrl = (path) => `${API_BASE_URL}${path}`;
+        let email = new URLSearchParams(window.location.search).get('email') || '';
+
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.innerHTML = text ? `<div class="message ${type}">${text}</div>` : '';
+        }
+
+        document.getElementById('otpForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const otp = document.getElementById('otp').value.trim();
+            const formData = new FormData();
+            formData.append('otp', otp);
+            const btn = document.getElementById('verifyBtn');
+            btn.disabled = true;
+            btn.textContent = 'Verifying...';
+            try {
+                const response = await fetch(apiUrl('/verify-otp'), {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                showMessage(data.message, data.success ? 'success' : 'error');
+                if (data.success && data.redirect) {
+                    setTimeout(() => { window.location.href = data.redirect; }, 1000);
+                }
+            } catch {
+                showMessage('Network error. Please try again.', 'error');
+            }
+            btn.disabled = false;
+            btn.textContent = 'Verify OTP';
+        });
+
+        document.getElementById('resendBtn').addEventListener('click', async () => {
+            const formData = new FormData();
+            if (email) {
+                formData.append('email', email);
+            }
+            try {
+                const response = await fetch(apiUrl('/resend-otp'), {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                showMessage(data.message, data.success ? 'success' : 'error');
+            } catch {
+                showMessage('Failed to resend OTP.', 'error');
+            }
+        });
+
+        gsap.from('.card', { y: 40, opacity: 0, duration: 0.8, ease: 'power3.out' });
+    </script>
+</body>
+</html>

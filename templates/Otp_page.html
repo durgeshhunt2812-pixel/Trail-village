@@ -4,6 +4,7 @@
     <title>🔐 Verify OTP - Smart Attendance</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <meta charset="UTF-8">
+    <script src="/static/app-config.js"></script>
 
 <style>
 *{ margin:0; padding:0; box-sizing:border-box; }
@@ -195,6 +196,10 @@ button:disabled{ opacity:.6; cursor:not-allowed; }
 
 
 <script>
+const APP_CONFIG = window.APP_CONFIG || {};
+const API_BASE_URL = (APP_CONFIG.apiBaseUrl || '').replace(/\/$/, '');
+const apiUrl = (path) => `${API_BASE_URL}${path}`;
+
 /* =================================================
    YOUR ORIGINAL LOGIC (UNCHANGED)
 ================================================= */
@@ -232,7 +237,7 @@ document.getElementById('otpForm').onsubmit=async(e)=>{
     showMessage('','');
 
     try{
-        const response=await fetch('/verify-otp',{method:'POST',body:formData});
+        const response=await fetch(apiUrl('/verify-otp'),{method:'POST',body:formData,credentials:'include'});
         const data=await response.json();
 
         showMessage(data.message,data.success?'success':'error');
@@ -255,7 +260,18 @@ document.getElementById('resendBtn').onclick=async()=>{
         return;
     }
 
-    showMessage('📤 OTP Sent Again!','success');
+    const resendForm=new FormData();
+    if(email){
+        resendForm.append('email',email);
+    }
+
+    try{
+        const response=await fetch(apiUrl('/resend-otp'),{method:'POST',body:resendForm,credentials:'include'});
+        const data=await response.json();
+        showMessage(data.message,data.success?'success':'error');
+    }catch{
+        showMessage('❌ Failed to resend OTP','error');
+    }
 };
 
 

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="./static/style.css">
+    <script src="./static/app-config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+</head>
+<body>
+    <div class="dashboard-shell">
+        <div class="dashboard-grid">
+            <div class="panel">
+                <div class="panel-header">
+                    <h1 style="margin:0;">Live Dashboard</h1>
+                </div>
+                <div class="panel-body">
+                    <img id="video-feed" class="video-feed" alt="Live camera feed">
+                    <div class="status-grid">
+                        <div class="status-card"><span class="value" id="attendanceStatus">Absent</span><span class="label">Attendance</span></div>
+                        <div class="status-card"><span class="value" id="expressionStatus">None</span><span class="label">Expression</span></div>
+                        <div class="status-card"><span class="value" id="gestures">None</span><span class="label">Gesture</span></div>
+                    </div>
+                    <div class="controls">
+                        <div>
+                            <h3>Speech</h3>
+                            <div class="card" style="padding:16px; margin-top:10px;">
+                                <div id="speechText">No speech detected...</div>
+                                <button id="speechToggle" class="button" style="margin-top:12px;">Start Listening</button>
+                            </div>
+                        </div>
+                        <div>
+                            <h3>Filters</h3>
+                            <div class="pill-row">
+                                <button class="pill active" onclick="setFilter('normal', event)">Normal</button>
+                                <button class="pill" onclick="setFilter('bw', event)">B&W</button>
+                                <button class="pill" onclick="setFilter('red', event)">Red</button>
+                                <button class="pill" onclick="setFilter('blur', event)">Blur</button>
+                                <button class="pill" onclick="setFilter('cartoon', event)">Cartoon</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 style="margin:0;">AI Assistant</h2>
+                </div>
+                <div class="panel-body">
+                    <div id="chat-messages" class="chat-box"></div>
+                    <div class="chat-input-row">
+                        <input type="text" id="message-input" placeholder="Type your message...">
+                        <button class="button" style="width:auto; margin-top:0;" onclick="sendMessage()">Send</button>
+                    </div>
+                    <div class="record-links" style="margin-top:14px;">
+                        <a id="attendance-records-link" href="#" target="_blank">Attendance records</a>
+                        <a id="speech-records-link" href="#" target="_blank">Speech records</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const APP_CONFIG = window.APP_CONFIG || {};
+        const API_BASE_URL = (APP_CONFIG.apiBaseUrl || '').replace(/\/$/, '');
+        const apiUrl = (path) => `${API_BASE_URL}${path}`;
+        const socket = API_BASE_URL ? io(API_BASE_URL, { withCredentials: true }) : io();
+        const chatMessages = document.getElementById('chat-messages');
+        let isListening = false;
+
+        document.getElementById('video-feed').src = apiUrl('/video');
+        document.getElementById('attendance-records-link').href = apiUrl('/attendance-all');
+        document.getElementById('speech-records-link').href = apiUrl('/speech-records');
+
+        socket.on('response', (data) => addMessage('AI', data.message, 'ai'));
+        socket.on('connect', () => addMessage('System', 'Connected to backend.', 'ai'));
+
+        function addMessage(sender, message, type) {
+            const div = document.createElement('div');
+            div.className = `chat-message ${type}`;
+            div.innerHTML = `<strong>${sender}:</strong> ${message.replace(/\n/g, '<br>')}`;
+            chatMessages.appendChild(div);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            if (!message) return;
+            addMessage('You', message, 'user');
+            socket.emit('message', { message });
+            input.value = '';
+        }
+
+        function setFilter(name, event) {
+            document.querySelectorAll('.pill').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            fetch(apiUrl(`/filter/${name}`), { credentials: 'include' });
+        }
+
+        function refreshStatus() {
+            fetch(apiUrl('/status'), { credentials: 'include' })
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('attendanceStatus').textContent = data.attendance;
+                    document.getElementById('expressionStatus').textContent = data.expression;
+                    document.getElementById('gestures').textContent = data.gesture;
+                    document.getElementById('speechText').textContent = data.speech ? data.speech : 'No speech detected...';
+                    isListening = data.listening;
+                    document.getElementById('speechToggle').textContent = isListening ? 'Stop Listening' : 'Start Listening';
+                });
+        }
+
+        document.getElementById('speechToggle').addEventListener('click', () => {
+            fetch(apiUrl('/toggle-speech'), { method: 'POST', credentials: 'include' })
+                .then(refreshStatus);
+        });
+
+        document.getElementById('message-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        refreshStatus();
+        setInterval(refreshStatus, 1500);
+    </script>
+</body>
+</html>

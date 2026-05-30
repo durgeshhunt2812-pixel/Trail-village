@@ -3,6 +3,7 @@
 <head>
     <title>🔐 Smart Attendance Login</title>
     <meta charset="UTF-8">
+    <script src="/static/app-config.js"></script>
 
     <!-- GSAP -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -145,6 +146,10 @@
 
 
 <script>
+const APP_CONFIG = window.APP_CONFIG || {};
+const API_BASE_URL = (APP_CONFIG.apiBaseUrl || '').replace(/\/$/, '');
+const apiUrl = (path) => `${API_BASE_URL}${path}`;
+
 /* ==============================
    FORM LOGIC
 ============================== */
@@ -165,9 +170,10 @@ document.getElementById('loginForm').onsubmit = async (e) => {
     btn.disabled = true;
 
     try{
-        const response = await fetch('/send-otp',{
+        const response = await fetch(apiUrl('/send-otp'),{
             method:'POST',
-            body:formData
+            body:formData,
+            credentials:'include'
         });
 
         const data = await response.json();

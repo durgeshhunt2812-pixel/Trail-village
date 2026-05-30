@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Attendance Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.js"></script>
+    <script src="/static/app-config.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -433,6 +434,11 @@
     </style>
 </head>
 <body>
+    <script>
+        const APP_CONFIG = window.APP_CONFIG || {};
+        const API_BASE_URL = (APP_CONFIG.apiBaseUrl || '').replace(/\/$/, '');
+        const apiUrl = (path) => `${API_BASE_URL}${path}`;
+    </script>
     <div class="container">
         <!-- navbar -->
          
@@ -443,7 +449,7 @@
                     <h1>📹 Live Camera Feed</h1>
                 </div>
                 <div class="video-live connected" id="liveIndicator" style="height: 30px; width: 120px; font-size: 10px;">🟢 LIVE</div>
-                <img id="video-feed" src="/video" alt="Live Video" class="video-feed">
+                <img id="video-feed" src="" alt="Live Video" class="video-feed">
                 <div class="status-bar" id="statusBar">
                     <div class="status-item" style="height:70px; width: 140px; ">
                         <div class="status-value" id="attendanceStatus">Absent</div>
@@ -507,17 +513,21 @@
             </div>
             
             <div class="records-section">
-                <a href="/attendance-all" class="record-link" target="_blank">📋 All Attendance Records</a>
-                <a href="/speech-records" class="record-link" target="_blank">🎤 Speech Records</a>
+                <a id="attendance-records-link" href="#" class="record-link" target="_blank">📋 All Attendance Records</a>
+                <a id="speech-records-link" href="#" class="record-link" target="_blank">🎤 Speech Records</a>
             </div>
         </div>
     </div>
 
     <script>
-        const socket = io();
+        const socket = API_BASE_URL ? io(API_BASE_URL, { withCredentials: true }) : io();
         const chatMessages = document.getElementById('chat-messages');
         let currentFilter = 'normal';
         let isListening = false;
+
+        document.getElementById('video-feed').src = apiUrl('/video');
+        document.getElementById('attendance-records-link').href = apiUrl('/attendance-all');
+        document.getElementById('speech-records-link').href = apiUrl('/speech-records');
 
         // Socket Events
         socket.on('connect', () => {
@@ -538,7 +548,7 @@
 
         // ✅ FIXED: Update Status with Speech Display
         function updateStatus() {
-            fetch('/status')
+            fetch(apiUrl('/status'), { credentials: 'include' })
                 .then(r => r.json())
                 .then(data => {
                     // Status updates
@@ -600,7 +610,7 @@
         }
 
         function toggleSpeech() {
-            fetch('/toggle-speech', { method: 'POST' })
+            fetch(apiUrl('/toggle-speech'), { method: 'POST', credentials: 'include' })
                 .then(() => updateStatus());
         }
 
@@ -613,7 +623,7 @@
         event.target.classList.add('active');
     
         // Fetch to update backend filter
-        fetch(`/filter/${name}`)
+        fetch(apiUrl(`/filter/${name}`), { credentials: 'include' })
             .then(() => console.log(`Filter set to ${name}`))
             .catch(err => console.error('Filter error:', err));
         }

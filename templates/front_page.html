@@ -4,6 +4,7 @@
     <title>Smart Webcam</title>
     <!-- GSAP -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="/static/app-config.js"></script>
     <style>
         body{
             height:100vh;
@@ -64,13 +65,20 @@
 </head>
 
 <body>
-    <img src="{{ url_for('static', filename='logo.png') }}" alt="logo" height="60px" width="60px" id="logo1">
+    <img src="" alt="logo" height="60px" width="60px" id="logo1">
     <h1 id="title">Smart Webcam</h1>
     <button id="enterBtn">Continue</button>
 
     <script>
+        const APP_CONFIG = window.APP_CONFIG || {};
+        const API_BASE_URL = (APP_CONFIG.apiBaseUrl || '').replace(/\/$/, '');
+        const apiUrl = (path) => `${API_BASE_URL}${path}`;
+
         const title = document.getElementById("title");
         const btn = document.getElementById("enterBtn");
+        const logo = document.getElementById("logo1");
+
+        logo.src = apiUrl('/static/logo.png');
 
         // 🔹 Split letters
         title.innerHTML = title.textContent

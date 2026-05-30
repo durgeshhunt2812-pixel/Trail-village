@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Webcam Login</title>
+    <link rel="stylesheet" href="./static/style.css">
+    <script src="./static/app-config.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+</head>
+<body>
+    <div class="page-center">
+        <div class="card">
+            <div class="brand">
+                <div>
+                    <strong>Smart Webcam</strong>
+                    <span>Send OTP to your email</span>
+                </div>
+            </div>
+            <h2>Login</h2>
+            <form id="loginForm">
+                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                <button type="submit" id="sendBtn" class="button">Send OTP</button>
+            </form>
+            <div id="message"></div>
+        </div>
+    </div>
+
+    <script>
+        const APP_CONFIG = window.APP_CONFIG || {};
+        const API_BASE_URL = (APP_CONFIG.apiBaseUrl || '').replace(/\/$/, '');
+        const apiUrl = (path) => `${API_BASE_URL}${path}`;
+
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.innerHTML = text ? `<div class="message ${type}">${text}</div>` : '';
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const btn = document.getElementById('sendBtn');
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+            try {
+                const response = await fetch(apiUrl('/send-otp'), {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                showMessage(data.message, data.success ? 'success' : 'error');
+                if (data.success && data.redirect) {
+                    setTimeout(() => { window.location.href = data.redirect; }, 900);
+                }
+            } catch {
+                showMessage('Network error. Please try again.', 'error');
+            }
+            btn.disabled = false;
+            btn.textContent = 'Send OTP';
+        });
+
+        gsap.from('.card', { y: 40, opacity: 0, duration: 0.8, ease: 'power3.out' });
+    </script>
+</body>
+</html>
